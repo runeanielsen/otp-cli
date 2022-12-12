@@ -1,5 +1,5 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-fn main() {
-    println!("Hello, world!");
-}
+mod hotp;
+
+fn main() {}

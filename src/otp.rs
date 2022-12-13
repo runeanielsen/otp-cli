@@ -11,7 +11,7 @@ fn step_counter(time: &SystemTime, step: u64) -> u64 {
 }
 
 /// HMAC-based one-time password for a given secret and counter.
-fn hotp(secret: &str, counter: u64) -> u32 {
+fn hotp(secret: &str, counter: u64, digits: u32) -> u32 {
     let digest = Hmac::<Sha1>::new_from_slice(&secret.to_owned().into_bytes())
         .unwrap()
         .chain_update(counter.to_be_bytes())
@@ -24,11 +24,11 @@ fn hotp(secret: &str, counter: u64) -> u32 {
         | u32::from(digest[(offset + 2)]) << 8
         | u32::from(digest[(offset + 3)]);
 
-    code % 1_000_000
+    code % (10_u32).pow(digits)
 }
 
 pub fn totp(secret: &str, interval: u64) -> u32 {
-    hotp(secret, step_counter(&SystemTime::now(), interval))
+    hotp(secret, step_counter(&SystemTime::now(), interval), 6)
 }
 
 #[cfg(test)]
@@ -52,7 +52,7 @@ mod tests {
         ];
 
         for (expected, secret) in assertions {
-            let result = hotp(secret, 0);
+            let result = hotp(secret, 0, 6);
             assert_eq!(expected, result);
         }
     }

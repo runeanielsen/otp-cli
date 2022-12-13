@@ -42,19 +42,19 @@ mod tests {
         // We cannot, assert on specific values, since the current time
         // changes all the time.
         assert!(totp("hello", 30) > 0);
+        assert!(totp("sdfsfs", 15) > 0);
+        assert!(totp("wowi", 10) > 0);
+        assert!(totp("mysuperdupersecret#!@#", 2000) > 0);
     }
 
     #[test]
     fn get_hotp() {
-        let assertions = [
-            (124_111, "Hello world!"),
-            (654_079, "it works!"),
-            (722_283, "yes it does!"),
-        ];
+        assert_eq!(124_111, hotp("Hello world!", 0, 6));
+        assert_eq!(654_079, hotp("it works!", 0, 6));
+        assert_eq!(722_283, hotp("yes it does!", 0, 6));
 
-        for (expected, secret) in assertions {
-            let result = hotp(secret, 0, 6);
-            assert_eq!(expected, result);
-        }
+        assert_eq!(42_124_111, hotp("Hello world!", 0, 8));
+        assert_eq!(47_654_079, hotp("it works!", 0, 8));
+        assert_eq!(19_722_283, hotp("yes it does!", 0, 8));
     }
 }

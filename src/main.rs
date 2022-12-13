@@ -1,5 +1,5 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-mod hotp;
+mod otp;
 
 fn main() {}

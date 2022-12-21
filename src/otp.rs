@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 
 /// Counts the steps since unix epoch.
-fn step_counter(time: &SystemTime, step: u64) -> u64 {
+pub fn step_counter(time: &SystemTime, step: u64) -> u64 {
     time.duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs()
@@ -28,8 +28,8 @@ fn hotp(secret: &str, counter: u64, digits: u32) -> u32 {
     code % (10_u32).pow(digits)
 }
 
-pub fn totp(secret: &str, interval: u64) -> u32 {
-    hotp(secret, step_counter(&SystemTime::now(), interval), 6)
+pub fn totp(secret: &str, interval: u64, digits: u32) -> u32 {
+    hotp(secret, step_counter(&SystemTime::now(), interval), digits)
 }
 
 #[cfg(test)]
@@ -41,10 +41,10 @@ mod tests {
         // Want make sure that something is returned.
         // We cannot, assert on specific values, since the current time
         // changes all the time.
-        assert!(totp("hello", 30) > 0);
-        assert!(totp("sdfsfs", 15) > 0);
-        assert!(totp("wowi", 10) > 0);
-        assert!(totp("mysuperdupersecret#!@#", 2000) > 0);
+        assert!(totp("hello", 30, 6) > 0);
+        assert!(totp("sdfsfs", 15, 6) > 0);
+        assert!(totp("wowi", 10, 6) > 0);
+        assert!(totp("mysuperdupersecret#!@#", 2000, 6) > 0);
     }
 
     #[test]

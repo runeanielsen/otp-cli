@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 
 /// Counts the steps since unix epoch.
-pub fn step_counter(time: &SystemTime, step: u64) -> u64 {
+fn step_counter(time: &SystemTime, step: u64) -> u64 {
     time.duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs()

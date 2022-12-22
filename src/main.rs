@@ -77,28 +77,18 @@ fn read_char() -> Option<char> {
     }
 }
 
-fn longest_config_name_by_count(configs: &[OtpConfig]) -> usize {
-    let mut longest_char_count = 0;
-    for config in configs {
-        let char_count = config.name.len();
-        if char_count > longest_char_count {
-            longest_char_count = char_count;
-        }
-    }
-
-    longest_char_count
+fn longest_config_name_by_count(configs: &[OtpConfig]) -> Option<usize> {
+    configs
+        .iter()
+        .max_by(|x, y| x.name.len().cmp(&y.name.len()))
+        .map(|config| config.name.len())
 }
 
-fn most_otp_digits(configs: &[OtpConfig]) -> u32 {
-    let mut most_digits = 0;
-    for config in configs {
-        let digits = config.digits;
-        if digits > most_digits {
-            most_digits = digits;
-        }
-    }
-
-    most_digits
+fn most_otp_digits(configs: &[OtpConfig]) -> Option<u32> {
+    configs
+        .iter()
+        .max_by(|x, y| x.digits.cmp(&y.digits))
+        .map(|config| config.digits)
 }
 
 fn otp_display(configs: &[OtpConfig], time: &SystemTime) -> String {
@@ -115,8 +105,8 @@ fn otp_display(configs: &[OtpConfig], time: &SystemTime) -> String {
                 ),
                 step_counter(time, x.interval),
                 x.interval,
-                digits_width = most_otp_digits(configs) as usize,
-                max_length = longest_config_name_by_count(configs)
+                digits_width = most_otp_digits(configs).unwrap() as usize,
+                max_length = longest_config_name_by_count(configs).unwrap()
             )
         })
         .collect::<String>()
@@ -209,7 +199,7 @@ mod tests {
             },
         ];
 
-        assert_eq!(24, longest_config_name_by_count(&configs));
+        assert_eq!(24, longest_config_name_by_count(&configs).unwrap());
     }
 
     #[test]
@@ -253,6 +243,6 @@ mod tests {
             },
         ];
 
-        assert_eq!(8, most_otp_digits(&configs));
+        assert_eq!(8, most_otp_digits(&configs).unwrap());
     }
 }

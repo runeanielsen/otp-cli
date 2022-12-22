@@ -12,8 +12,7 @@ Press `q` to quit the application.
 
 ## Configuration file
 
-It uses the "Google Authenticator format":
-`Otpauth://totp/Example:alice@google.com?secret=JBSWY3DPEHPK3PXP&issuer=Example`.
+It uses the "Google Authenticator format".
 
 Example of configuration.
 

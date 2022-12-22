@@ -14,17 +14,10 @@ use crossterm::{
 };
 
 use config::{load, longest_name_char_count, max_digits, Config};
-use totp::totp;
+use totp::{duration_used, totp};
 
 mod config;
 mod totp;
-
-fn step_counter(time: &SystemTime, step: u64) -> u64 {
-    time.duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        % step
-}
 
 fn read_char() -> Option<char> {
     loop {
@@ -50,7 +43,7 @@ fn otp_display(configs: &[Config], time: &SystemTime) -> String {
                     totp(&x.secret, x.interval, x.digits),
                     width = x.digits as usize
                 ),
-                step_counter(time, x.interval),
+                duration_used(time, x.interval),
                 x.interval,
                 digits_width = max_digits(configs).unwrap() as usize,
                 max_length = longest_name_char_count(configs).unwrap()

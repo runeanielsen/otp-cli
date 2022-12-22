@@ -32,6 +32,14 @@ pub fn totp(secret: &str, interval: u64, digits: u32) -> u32 {
     hotp(secret, step_counter(&SystemTime::now(), interval), digits)
 }
 
+// Duration used so far for TOTP.
+pub fn duration_used(time: &SystemTime, step: u64) -> u64 {
+    time.duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        % step
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

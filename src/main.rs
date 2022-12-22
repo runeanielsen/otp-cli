@@ -13,50 +13,10 @@ use crossterm::{
     terminal::{self, ClearType},
 };
 
+use config::{load, longest_name_char_count, max_digits, Config};
+
+mod config;
 mod otp;
-
-#[derive(Clone)]
-struct OtpConfig {
-    digits: u32,
-    interval: u64,
-    name: String,
-    secret: String,
-}
-
-fn load_otp_config() -> Vec<OtpConfig> {
-    vec![
-        OtpConfig {
-            name: "Mastodon".to_string(),
-            secret: "hello".to_string(),
-            interval: 30,
-            digits: 6,
-        },
-        OtpConfig {
-            name: "Codeberg".to_string(),
-            secret: "hello world!".to_string(),
-            interval: 30,
-            digits: 6,
-        },
-        OtpConfig {
-            name: "Codeberg 1".to_string(),
-            secret: "hello world!1".to_string(),
-            interval: 30,
-            digits: 6,
-        },
-        OtpConfig {
-            name: "Codeberg 2".to_string(),
-            secret: "hello world!2".to_string(),
-            interval: 60,
-            digits: 6,
-        },
-        OtpConfig {
-            name: "Codeberg 3".to_string(),
-            secret: "hello world!3".to_string(),
-            interval: 30,
-            digits: 8,
-        },
-    ]
-}
 
 fn step_counter(time: &SystemTime, step: u64) -> u64 {
     time.duration_since(SystemTime::UNIX_EPOCH)
@@ -77,21 +37,7 @@ fn read_char() -> Option<char> {
     }
 }
 
-fn longest_config_name_by_count(configs: &[OtpConfig]) -> Option<usize> {
-    configs
-        .iter()
-        .max_by(|x, y| x.name.len().cmp(&y.name.len()))
-        .map(|config| config.name.len())
-}
-
-fn most_otp_digits(configs: &[OtpConfig]) -> Option<u32> {
-    configs
-        .iter()
-        .max_by(|x, y| x.digits.cmp(&y.digits))
-        .map(|config| config.digits)
-}
-
-fn otp_display(configs: &[OtpConfig], time: &SystemTime) -> String {
+fn otp_display(configs: &[Config], time: &SystemTime) -> String {
     configs
         .iter()
         .map(|x| {
@@ -105,20 +51,20 @@ fn otp_display(configs: &[OtpConfig], time: &SystemTime) -> String {
                 ),
                 step_counter(time, x.interval),
                 x.interval,
-                digits_width = most_otp_digits(configs).unwrap() as usize,
-                max_length = longest_config_name_by_count(configs).unwrap()
+                digits_width = max_digits(configs).unwrap() as usize,
+                max_length = longest_name_char_count(configs).unwrap()
             )
         })
         .collect::<String>()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let configs = load();
+
     let mut stdout = stdout();
 
     execute!(stdout, terminal::EnterAlternateScreen)?;
     terminal::enable_raw_mode()?;
-
-    let configs = load_otp_config();
 
     loop {
         queue!(
@@ -152,97 +98,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal::disable_raw_mode()?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn can_find_longest_config_name_by_count() {
-        let configs = [
-            OtpConfig {
-                name: "Mastodon".to_string(),
-                secret: "hello".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg".to_string(),
-                secret: "hello world!".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 1".to_string(),
-                secret: "hello world!1".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "This is a very long name".to_string(),
-                secret: "hello world!1".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 2".to_string(),
-                secret: "hello world!2".to_string(),
-                interval: 60,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 3".to_string(),
-                secret: "hello world!3".to_string(),
-                interval: 30,
-                digits: 8,
-            },
-        ];
-
-        assert_eq!(24, longest_config_name_by_count(&configs).unwrap());
-    }
-
-    #[test]
-    fn can_find_most_otp_digits_in_configs() {
-        let configs = [
-            OtpConfig {
-                name: "Mastodon".to_string(),
-                secret: "hello".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg".to_string(),
-                secret: "hello world!".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 1".to_string(),
-                secret: "hello world!1".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "This is a very long name".to_string(),
-                secret: "hello world!1".to_string(),
-                interval: 30,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 2".to_string(),
-                secret: "hello world!2".to_string(),
-                interval: 60,
-                digits: 6,
-            },
-            OtpConfig {
-                name: "Codeberg 3".to_string(),
-                secret: "hello world!3".to_string(),
-                interval: 30,
-                digits: 8,
-            },
-        ];
-
-        assert_eq!(8, most_otp_digits(&configs).unwrap());
-    }
 }

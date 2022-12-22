@@ -141,15 +141,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "otp-cli"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "hmac",
- "sha1",
-]
-
-[[package]]
 name = "parking_lot"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -239,6 +230,15 @@ name = "subtle"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
+
+[[package]]
+name = "totp-cli"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "hmac",
+ "sha1",
+]
 
 [[package]]
 name = "typenum"

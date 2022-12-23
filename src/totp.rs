@@ -21,7 +21,12 @@ impl Totp {
     }
 
     pub fn code(&self, time: &SystemTime) -> u32 {
-        let counter = step_counter(time, self.interval);
+        let counter = time
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            / self.interval;
+
         let digest = Hmac::<Sha1>::new_from_slice(&self.secret.clone().into_bytes())
             .unwrap()
             .chain_update(counter.to_be_bytes())
@@ -44,14 +49,6 @@ impl Totp {
             .as_secs()
             % self.interval
     }
-}
-
-/// Counts the steps since unix epoch.
-fn step_counter(time: &SystemTime, step: u64) -> u64 {
-    time.duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        / step
 }
 
 #[cfg(test)]

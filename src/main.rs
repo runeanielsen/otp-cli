@@ -13,11 +13,18 @@ use crossterm::{
     terminal::{self, ClearType},
 };
 
-use config::{load, longest_name_char_count, max_digits};
+use config::load;
 use totp::Totp;
 
 mod config;
 mod totp;
+
+fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
+    configs
+        .iter()
+        .max_by(|x, y| x.name.len().cmp(&y.name.len()))
+        .map(|config| config.name.len())
+}
 
 fn read_char() -> Option<char> {
     loop {
@@ -38,10 +45,10 @@ fn otp_display(configs: &[Totp], time: &SystemTime) -> String {
             format!(
                 "{:<max_length$} | {:<digits_width$} | {:02}/{}\n",
                 x.name,
-                format!("{:0width$}", x.code(time), width = x.digits as usize),
+                x.code(time),
                 x.duration_used(time),
                 x.interval,
-                digits_width = max_digits(configs).unwrap() as usize,
+                digits_width = x.digits as usize,
                 max_length = longest_name_char_count(configs).unwrap()
             )
         })
@@ -88,4 +95,33 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal::disable_raw_mode()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_totp() {
+        let totps = [
+            Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
+            Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
+            Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
+            Totp::new("Bar Enterprises", "7h1lm5rp", 6, 30),
+            Totp::new("Baz Inc.", "2v9d4k8c", 6, 30),
+            Totp::new("Qux Limited", "5j6w7m2v", 6, 30),
+            Totp::new("Quux Corp.", "3p8s1q9z", 6, 30),
+            Totp::new("Corge Enterprises", "4y7e2u5k", 6, 30),
+            Totp::new("Grault Inc.", "6f9h2l5m", 6, 30),
+            Totp::new("Garply Co.", "1d4t7h2v", 6, 30),
+        ];
+
+        // Want make sure that something is returned.
+        // We cannot, assert on specific values, since the current time
+        // changes all the time.
+        let now = SystemTime::now();
+        for totp in totps {
+            assert!(totp.code(&now) > 0);
+        }
+    }
 }

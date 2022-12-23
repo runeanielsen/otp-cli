@@ -50,26 +50,3 @@ impl Totp {
             % self.interval
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn get_totp() {
-        let totps = [
-            Totp::new("Codeberg 1", "hello1", 6, 30),
-            Totp::new("Codeberg 2", "hello2", 6, 30),
-            Totp::new("Codeberg 3", "hello3", 6, 30),
-            Totp::new("Codeberg 4", "hello4", 6, 30),
-        ];
-
-        // Want make sure that something is returned.
-        // We cannot, assert on specific values, since the current time
-        // changes all the time.
-        let now = SystemTime::now();
-        for totp in totps {
-            assert!(totp.code(&now) > 0);
-        }
-    }
-}

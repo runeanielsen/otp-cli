@@ -25,7 +25,7 @@ fn format_totps(configs: &[Totp], time: &SystemTime) -> String {
         .iter()
         .map(|x| {
             format!(
-                "{:<max_length$} | {:0<digits_width$} | {:02}/{}\n",
+                "{:<max_length$} | {:0digits_width$} | {:02}/{}\n",
                 x.name,
                 x.code(time),
                 x.duration_used(time),
@@ -121,7 +121,7 @@ mod tests {
             Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
         ];
 
-        let expected = "Acme Inc.         | 640572 | 10/30\nGizmo Corporation | 87439  | 10/30\nFoo Industries    | 771990 | 10/30\n";
+        let expected = "Acme Inc.         | 640572 | 10/30\nGizmo Corporation | 087439 | 10/30\nFoo Industries    | 771990 | 10/30\n";
 
         assert_eq!(expected, format_totps(&totps, &march_14_2020));
     }

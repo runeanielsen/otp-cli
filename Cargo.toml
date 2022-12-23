@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 crossterm = "0.25.0"
 hmac = "0.12.1"
+regex = "1.7.0"
 sha1 = "0.10.5"

@@ -38,7 +38,7 @@ fn read_char() -> Option<char> {
     }
 }
 
-fn otp_display(configs: &[Totp], time: &SystemTime) -> String {
+fn format_totps(configs: &[Totp], time: &SystemTime) -> String {
     configs
         .iter()
         .map(|x| {
@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             cursor::MoveTo(0, 0)
         )?;
 
-        for line in otp_display(&configs, &SystemTime::now()).split('\n') {
+        for line in format_totps(&configs, &SystemTime::now()).split('\n') {
             queue!(stdout, style::Print(line), cursor::MoveToNextLine(1))?;
         }
 
@@ -116,12 +116,20 @@ mod tests {
             Totp::new("Garply Co.", "1d4t7h2v", 6, 30),
         ];
 
-        // Want make sure that something is returned.
-        // We cannot, assert on specific values, since the current time
-        // changes all the time.
-        let now = SystemTime::now();
-        for totp in totps {
-            assert!(totp.code(&now) > 0);
-        }
+        assert_eq!(17, longest_name_char_count(&totps).unwrap());
+    }
+
+    #[test]
+    fn totp_is_formatted_correctly() {
+        let march_14_2020 = SystemTime::UNIX_EPOCH + Duration::new(1_584_188_800, 0);
+        let totps = [
+            Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
+            Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
+            Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
+        ];
+
+        let expected = "Acme Inc.         | 640572 | 10/30\nGizmo Corporation | 87439  | 10/30\nFoo Industries    | 771990 | 10/30\n";
+
+        assert_eq!(expected, format_totps(&totps, &march_14_2020));
     }
 }

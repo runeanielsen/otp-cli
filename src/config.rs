@@ -20,7 +20,7 @@ Otpauth://totp/Consulting Firm:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=C
 
 fn parse_google_format(s: &str) -> Option<Totp> {
     let re = Regex::new(r"^Otpauth://totp/(.*):.*?secret=(.*)&issuer=.*$")
-        .expect("Could not parse regex");
+        .expect("Could not parse regex.");
 
     re.captures(s)
         .map(|captures| Totp::new(&captures[1], &captures[2], 6, 30))

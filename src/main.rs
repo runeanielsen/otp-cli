@@ -13,8 +13,8 @@ use crossterm::{
     terminal::{self, ClearType},
 };
 
-use config::{load, longest_name_char_count, max_digits, Config};
-use totp::{duration_used, totp};
+use config::{load, longest_name_char_count, max_digits};
+use totp::Totp;
 
 mod config;
 mod totp;
@@ -31,19 +31,15 @@ fn read_char() -> Option<char> {
     }
 }
 
-fn otp_display(configs: &[Config], time: &SystemTime) -> String {
+fn otp_display(configs: &[Totp], time: &SystemTime) -> String {
     configs
         .iter()
         .map(|x| {
             format!(
                 "{:<max_length$} | {:<digits_width$} | {:02}/{}\n",
                 x.name,
-                format!(
-                    "{:0width$}",
-                    totp(&x.secret, x.interval, x.digits),
-                    width = x.digits as usize
-                ),
-                duration_used(time, x.interval),
+                format!("{:0width$}", x.code(time), width = x.digits as usize),
+                x.duration_used(time),
                 x.interval,
                 digits_width = max_digits(configs).unwrap() as usize,
                 max_length = longest_name_char_count(configs).unwrap()

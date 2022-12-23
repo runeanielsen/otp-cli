@@ -1,6 +1,6 @@
 # TOTP-CLI
 
-TOTP is a minimalist text-based user interface application that displays time-based one-time password secrets.
+Minimalist TUI application that displays TOTP codes.
 
 ## Note
 

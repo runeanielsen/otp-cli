@@ -20,21 +20,16 @@ fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
         .map(|config| config.name.len())
 }
 
-fn format_totps(configs: &[Totp], time: &SystemTime) -> String {
-    configs
-        .iter()
-        .map(|x| {
-            format!(
-                "{:<max_length$} | {:0digits_width$} | {:02}/{}\n",
-                x.name,
-                x.code(time),
-                x.duration_used(time),
-                x.interval,
-                digits_width = x.digits as usize,
-                max_length = longest_name_char_count(configs).unwrap()
-            )
-        })
-        .collect::<String>()
+fn format_totp(config: &Totp, time: &SystemTime, name_max_length: usize) -> String {
+    format!(
+        "{:<max_length$} | {:0digits_width$} | {:02}/{}",
+        config.name,
+        config.code(time),
+        config.duration_used(time),
+        config.interval,
+        digits_width = config.digits as usize,
+        max_length = name_max_length
+    )
 }
 
 fn read_char() -> Option<char> {
@@ -56,6 +51,8 @@ where
     execute!(w, terminal::EnterAlternateScreen)?;
     terminal::enable_raw_mode()?;
 
+    let name_max_length = longest_name_char_count(configs).unwrap();
+
     loop {
         queue!(
             w,
@@ -65,7 +62,11 @@ where
             cursor::MoveTo(0, 0)
         )?;
 
-        for line in format_totps(configs, &SystemTime::now()).split('\n') {
+        let now = SystemTime::now();
+        for line in configs
+            .iter()
+            .map(|x| format_totp(x, &now, name_max_length))
+        {
             queue!(w, style::Print(line), cursor::MoveToNextLine(1))?;
         }
 
@@ -115,14 +116,23 @@ mod tests {
     #[test]
     fn totp_is_formatted_correctly() {
         let march_14_2020 = SystemTime::UNIX_EPOCH + Duration::new(1_584_188_800, 0);
-        let totps = [
-            Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
-            Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
-            Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
+        let assertions = [
+            (
+                "Acme Inc.         | 640572 | 10/30",
+                Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
+            ),
+            (
+                "Gizmo Corporation | 087439 | 10/30",
+                Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
+            ),
+            (
+                "Foo Industries    | 771990 | 10/30",
+                Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
+            ),
         ];
 
-        let expected = "Acme Inc.         | 640572 | 10/30\nGizmo Corporation | 087439 | 10/30\nFoo Industries    | 771990 | 10/30\n";
-
-        assert_eq!(expected, format_totps(&totps, &march_14_2020));
+        for (expected, input) in assertions {
+            assert_eq!(expected, format_totp(&input, &march_14_2020, 17));
+        }
     }
 }

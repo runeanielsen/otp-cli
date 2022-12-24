@@ -3,7 +3,7 @@ use std::time::SystemTime;
 use hmac::{Hmac, Mac};
 use sha1::Sha1;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Totp {
     pub name: String,
     secret: String,

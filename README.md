@@ -8,10 +8,10 @@ Project is still under development and not ready for use.
 
 ## Key-bindings
 
-`k` to move up.
-`j` to move down.
-`q` to quit the application.
-`Enter` to copy current line to clipboard.
+- `k` to move up.
+- `j` to move down.
+- `q` to quit the application.
+- `Enter` to copy current line to clipboard.
 
 ## Configuration file
 

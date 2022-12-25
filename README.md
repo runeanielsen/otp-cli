@@ -8,7 +8,9 @@ Project is still under development and not ready for use.
 
 ## Key-bindings
 
-Press `q` to quit the application.
+`k` to move up.
+`j` to move down.
+`q` to quit the application.
 
 ## Configuration file
 

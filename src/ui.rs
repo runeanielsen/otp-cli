@@ -6,8 +6,9 @@ use std::{
 
 use crossterm::{
     cursor,
-    event::{self, poll, Event, KeyCode, KeyEvent},
-    execute, queue, style,
+    event::{self, poll, Event, KeyCode},
+    execute, queue,
+    style::{self, Stylize},
     terminal::{self, ClearType},
 };
 
@@ -32,18 +33,6 @@ fn format_totp(config: &Totp, time: &SystemTime, name_max_length: usize) -> Stri
     )
 }
 
-fn read_char() -> Option<char> {
-    loop {
-        if let Ok(Event::Key(KeyEvent {
-            code: KeyCode::Char(c),
-            ..
-        })) = event::read()
-        {
-            return Some(c);
-        }
-    }
-}
-
 pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
 where
     W: Write,
@@ -52,6 +41,10 @@ where
     terminal::enable_raw_mode()?;
 
     let name_max_length = longest_name_char_count(configs).unwrap();
+
+    // We use the line count starting for 0, so we want to substract a single value.
+    let max_index_count = configs.len().saturating_sub(1);
+    let mut current_index = 0;
 
     loop {
         queue!(
@@ -63,19 +56,36 @@ where
         )?;
 
         let now = SystemTime::now();
-        for line in configs
+        for (index, line) in configs
             .iter()
             .map(|x| format_totp(x, &now, name_max_length))
+            .enumerate()
         {
-            queue!(w, style::Print(line), cursor::MoveToNextLine(1))?;
+            if index == current_index {
+                queue!(
+                    w,
+                    style::PrintStyledContent(line.magenta()),
+                    cursor::MoveToNextLine(1)
+                )?;
+            } else {
+                queue!(w, style::Print(line), cursor::MoveToNextLine(1))?;
+            }
         }
 
         w.flush()?;
 
-        if poll(Duration::from_millis(1_000))? {
-            if let 'q' = read_char().expect("Could not read input.") {
+        if poll(Duration::from_millis(250))? {
+            let event = event::read()?;
+
+            if event == Event::Key(KeyCode::Char('j').into()) {
+                if current_index < max_index_count {
+                    current_index = current_index.saturating_add(1);
+                }
+            } else if event == Event::Key(KeyCode::Char('k').into()) {
+                current_index = current_index.saturating_sub(1);
+            } else if event == Event::Key(KeyCode::Char('q').into()) {
                 break;
-            };
+            }
         }
     }
 

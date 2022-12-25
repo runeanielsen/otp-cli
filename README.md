@@ -11,7 +11,7 @@ Project is still under development and not ready for use.
 - `k` to move up.
 - `j` to move down.
 - `q` to quit the application.
-- `Enter` to copy current line to clipboard.
+- `Enter` to copy the code from the current line to clipboard.
 
 ## Configuration file
 

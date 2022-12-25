@@ -37,7 +37,7 @@ pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
 where
     W: Write,
 {
-    execute!(w, terminal::EnterAlternateScreen)?;
+    execute!(w, terminal::EnterAlternateScreen, cursor::Hide)?;
     terminal::enable_raw_mode()?;
 
     let name_max_length = longest_name_char_count(configs).unwrap();
@@ -47,13 +47,7 @@ where
     let mut current_index = 0;
 
     loop {
-        queue!(
-            w,
-            style::ResetColor,
-            terminal::Clear(ClearType::All),
-            cursor::Hide,
-            cursor::MoveTo(0, 0)
-        )?;
+        queue!(w, cursor::MoveTo(0, 0))?;
 
         let now = SystemTime::now();
         for (index, line) in configs

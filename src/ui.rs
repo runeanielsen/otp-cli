@@ -9,7 +9,7 @@ use crossterm::{
     event::{self, poll, Event, KeyCode},
     execute, queue,
     style::{self, Stylize},
-    terminal::{self, ClearType},
+    terminal,
 };
 
 use crate::totp::Totp;

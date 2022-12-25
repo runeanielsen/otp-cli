@@ -4,6 +4,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+use arboard::Clipboard;
 use crossterm::{
     cursor,
     event::{self, poll, Event, KeyCode},
@@ -37,6 +38,8 @@ pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
 where
     W: Write,
 {
+    let mut clipboard = Clipboard::new().unwrap();
+
     execute!(w, terminal::EnterAlternateScreen, cursor::Hide)?;
     terminal::enable_raw_mode()?;
 
@@ -79,6 +82,16 @@ where
                 current_index = current_index.saturating_sub(1);
             } else if event == Event::Key(KeyCode::Char('q').into()) {
                 break;
+            } else if event == Event::Key(KeyCode::Enter.into()) {
+                let currently_selected = &configs[current_index];
+                let code = format!(
+                    "{:0digits$}",
+                    currently_selected.code(&now),
+                    digits = currently_selected.digits as usize
+                );
+                clipboard
+                    .set_text(code)
+                    .expect("Could not copy to clipboard.");
             }
         }
     }

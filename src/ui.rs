@@ -58,15 +58,13 @@ where
             .map(|x| format_totp(x, &now, name_max_length))
             .enumerate()
         {
-            if index == current_index {
-                queue!(
-                    w,
-                    style::PrintStyledContent(line.magenta()),
-                    cursor::MoveToNextLine(1)
-                )?;
+            let styled_line = if index == current_index {
+                style::PrintStyledContent(line.magenta())
             } else {
-                queue!(w, style::Print(line), cursor::MoveToNextLine(1))?;
-            }
+                style::PrintStyledContent(line.reset())
+            };
+
+            queue!(w, styled_line, cursor::MoveToNextLine(1))?;
         }
 
         w.flush()?;

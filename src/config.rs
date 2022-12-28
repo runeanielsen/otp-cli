@@ -31,8 +31,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn example() {
-        let xs = [
+    fn can_parse_google_authentication_format() {
+        let assertions = [
             (Totp::new("Acme Inc.", "GZMWV5JLOMNI2XJL", 6, 30),
              "Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp"),
             (Totp::new("Widget Co", "JXQWZ4TVRNUP5YKM", 6, 30),
@@ -54,7 +54,7 @@ mod tests {
             (Totp::new("Consulting Firm", "RIFDL3BZYZU4GSUU", 6, 30),
              "Otpauth://totp/Consulting Firm:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=ConsultingFirm")];
 
-        for (expected, input) in xs {
+        for (expected, input) in assertions {
             assert_eq!(Some(expected), parse_google_format(input));
         }
     }

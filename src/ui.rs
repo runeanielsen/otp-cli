@@ -102,8 +102,7 @@ where
             }
         }
 
-        for index in 0..state.lines.len() {
-            let mut line = &mut state.lines[index];
+        for (index, line) in state.lines.iter_mut().enumerate() {
             if line.modified {
                 if index == state.current_index {
                     queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;

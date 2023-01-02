@@ -13,7 +13,7 @@ use crossterm::{
     terminal,
 };
 
-use crate::totp::Totp;
+use crate::totp::{self, Totp};
 
 fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
     configs
@@ -22,16 +22,41 @@ fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
         .map(|config| config.name.len())
 }
 
-fn format_totp(config: &Totp, time: &SystemTime, name_max_length: usize) -> String {
+fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> String {
     format!(
-        "{:<max_length$} | {:0digits_width$} | {:02}/{}",
+        "{:<max_length$} | {:0digits_width$}",
         config.name,
         config.code(time),
-        config.duration_used(time),
-        config.interval,
         digits_width = config.digits as usize,
         max_length = name_max_length
     )
+}
+
+struct State {
+    max_index: usize,
+    current_index: usize,
+    lines: Vec<Line>,
+}
+
+impl State {
+    fn new(lines: Vec<Line>, max_index: usize) -> Self {
+        State {
+            max_index,
+            current_index: 0,
+            lines,
+        }
+    }
+}
+
+struct Line {
+    text: String,
+    modified: bool,
+}
+
+impl Line {
+    fn new(text: String, modified: bool) -> Self {
+        Line { text, modified }
+    }
 }
 
 pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
@@ -44,47 +69,84 @@ where
     terminal::enable_raw_mode()?;
 
     let name_max_length = longest_name_char_count(configs).unwrap();
+    let interval = 30;
 
     // We use the line count starting for 0, so we want to substract a single value.
-    let max_index_count = configs.len().saturating_sub(1);
-    let mut current_index = 0;
+    let mut state = State::new(
+        configs
+            .iter()
+            .map(|x| Line::new(format_totp(x, SystemTime::now(), name_max_length), true))
+            .collect(),
+        configs.len().saturating_sub(1),
+    );
 
     loop {
-        queue!(w, cursor::MoveTo(0, 0))?;
-
         let now = SystemTime::now();
-        for (index, line) in configs
-            .iter()
-            .map(|x| format_totp(x, &now, name_max_length))
-            .enumerate()
-        {
-            let styled_line = if index == current_index {
-                style::PrintStyledContent(line.magenta())
-            } else {
-                style::PrintStyledContent(line.reset())
-            };
+        let duration_used = totp::duration_used(interval, now);
 
-            queue!(w, styled_line, cursor::MoveToNextLine(1))?;
+        let duration_line =
+            style::PrintStyledContent(format!("{duration_used:02}/{interval}").green());
+
+        queue!(
+            w,
+            cursor::MoveTo(0, 0),
+            duration_line,
+            cursor::MoveToNextLine(1)
+        )?;
+
+        if duration_used == 0 {
+            for (index, config) in configs.iter().enumerate() {
+                let mut line = &mut state.lines[index];
+                line.text = format_totp(config, now, name_max_length);
+                line.modified = true;
+            }
+        }
+
+        for index in 0..state.lines.len() {
+            let mut line = &mut state.lines[index];
+            if line.modified {
+                if index == state.current_index {
+                    queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;
+                } else {
+                    queue!(w, style::Print(line.text.clone()))?;
+                };
+
+                line.modified = false;
+            }
+
+            queue!(w, cursor::MoveToNextLine(1))?;
         }
 
         w.flush()?;
 
-        if poll(Duration::from_millis(250))? {
+        if poll(Duration::from_millis(500))? {
             let event = event::read()?;
 
             if event == Event::Key(KeyCode::Char('j').into()) {
-                if current_index < max_index_count {
-                    current_index = current_index.saturating_add(1);
+                if state.current_index < state.max_index {
+                    // Old selected is modified, it is no longer selected
+                    state.lines[state.current_index].modified = true;
+
+                    state.current_index = state.current_index.saturating_add(1);
+
+                    // New selection is modified, it is now selected
+                    state.lines[state.current_index].modified = true;
                 }
             } else if event == Event::Key(KeyCode::Char('k').into()) {
-                current_index = current_index.saturating_sub(1);
+                // Old selected is modified, it is no longer selected
+                state.lines[state.current_index].modified = true;
+
+                state.current_index = state.current_index.saturating_sub(1);
+
+                // New selection is modified, it is now selected
+                state.lines[state.current_index].modified = true;
             } else if event == Event::Key(KeyCode::Char('q').into()) {
                 break;
             } else if event == Event::Key(KeyCode::Enter.into()) {
-                let currently_selected = &configs[current_index];
+                let currently_selected = &configs[state.current_index];
                 let code = format!(
                     "{:0digits$}",
-                    currently_selected.code(&now),
+                    currently_selected.code(now),
                     digits = currently_selected.digits as usize
                 );
                 clipboard
@@ -147,7 +209,7 @@ mod tests {
         ];
 
         for (expected, input) in assertions {
-            assert_eq!(expected, format_totp(&input, &march_14_2020, 17));
+            assert_eq!(expected, format_totp(&input, march_14_2020, 17));
         }
     }
 }

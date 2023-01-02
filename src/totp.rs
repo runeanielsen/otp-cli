@@ -21,7 +21,7 @@ impl Totp {
         }
     }
 
-    pub fn code(&self, time: &SystemTime) -> u32 {
+    pub fn code(&self, time: SystemTime) -> u32 {
         let counter = time
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
@@ -42,14 +42,13 @@ impl Totp {
 
         code % (10_u32).pow(self.digits)
     }
+}
 
-    // Duration used so far for TOTP.
-    pub fn duration_used(&self, time: &SystemTime) -> u64 {
-        time.duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            % self.interval
-    }
+pub fn duration_used(interval: u64, time: SystemTime) -> u64 {
+    time.duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        % interval
 }
 
 #[cfg(test)]
@@ -76,7 +75,7 @@ mod tests {
         ];
 
         for (expected, totp) in test_data {
-            assert_eq!(expected, totp.code(&march_14_2020));
+            assert_eq!(expected, totp.code(march_14_2020));
         }
     }
 }

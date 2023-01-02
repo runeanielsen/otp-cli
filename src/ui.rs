@@ -85,7 +85,7 @@ where
         let duration_used = totp::duration_used(interval, now);
 
         let duration_line =
-            style::PrintStyledContent(format!("{duration_used:02}/{interval}").green());
+            style::PrintStyledContent(format!("{duration_used:02}/{interval}").grey());
 
         queue!(
             w,

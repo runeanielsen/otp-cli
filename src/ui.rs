@@ -18,8 +18,8 @@ use crate::totp::{self, Totp};
 fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
     configs
         .iter()
-        .max_by(|x, y| x.name.len().cmp(&y.name.len()))
-        .map(|config| config.name.len())
+        .max_by(|x, y| x.name.chars().count().cmp(&y.name.chars().count()))
+        .map(|config| config.name.chars().count())
 }
 
 fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> String {

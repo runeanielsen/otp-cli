@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     io::Write,
+    sync::{Arc, Mutex},
     time::{Duration, SystemTime},
 };
 
@@ -35,7 +36,11 @@ fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> Strin
     )
 }
 
-pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
+pub fn start<W>(
+    w: &mut W,
+    clipboard: Arc<Mutex<Clipboard>>,
+    configs: &[Totp],
+) -> Result<(), Box<dyn Error>>
 where
     W: Write,
 {
@@ -52,11 +57,12 @@ where
             .collect()
     };
 
-    let mut clipboard = Clipboard::new().expect("Could not get access to the clipboard.");
     let mut list_view = ListView::new(
         create_line_items(SystemTime::now()),
         Box::new(move |text| {
             clipboard
+                .lock()
+                .unwrap()
                 .set_text(text)
                 .expect("Could not set text in clipboard.");
         }),

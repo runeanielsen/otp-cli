@@ -8,6 +8,7 @@ use totp::Totp;
 mod config;
 mod totp;
 mod ui;
+mod list_view;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut stdout = stdout();

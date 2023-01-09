@@ -13,7 +13,10 @@ use crossterm::{
     terminal,
 };
 
-use crate::totp::{self, Totp};
+use crate::{
+    list_view::{LineItem, ListView},
+    totp::{self, Totp},
+};
 
 fn longest_name_char_count(configs: &[Totp]) -> Option<usize> {
     configs
@@ -32,52 +35,31 @@ fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> Strin
     )
 }
 
-struct State {
-    max_index: usize,
-    current_index: usize,
-    lines: Vec<Line>,
-}
-
-impl State {
-    fn new(lines: Vec<Line>, max_index: usize) -> Self {
-        State {
-            max_index,
-            current_index: 0,
-            lines,
-        }
-    }
-}
-
-struct Line {
-    text: String,
-    modified: bool,
-}
-
-impl Line {
-    fn new(text: String, modified: bool) -> Self {
-        Line { text, modified }
-    }
-}
-
 pub fn start<W>(w: &mut W, configs: &[Totp]) -> Result<(), Box<dyn Error>>
 where
     W: Write,
 {
-    let mut clipboard = Clipboard::new().unwrap();
-
     execute!(w, terminal::EnterAlternateScreen, cursor::Hide)?;
     terminal::enable_raw_mode()?;
 
     let name_max_length = longest_name_char_count(configs).unwrap();
     let interval = 30;
 
-    // We use the line count starting for 0, so we want to substract a single value.
-    let mut state = State::new(
+    let create_line_items = |now: SystemTime| -> Vec<LineItem> {
         configs
             .iter()
-            .map(|x| Line::new(format_totp(x, SystemTime::now(), name_max_length), true))
-            .collect(),
-        configs.len().saturating_sub(1),
+            .map(|config| LineItem::new(&format_totp(config, now, name_max_length)))
+            .collect()
+    };
+
+    let mut clipboard = Clipboard::new().expect("Could not get access to the clipboard.");
+    let mut list_view = ListView::new(
+        create_line_items(SystemTime::now()),
+        Box::new(move |text| {
+            clipboard
+                .set_text(text)
+                .expect("Could not set text in clipboard.");
+        }),
     );
 
     loop {
@@ -95,66 +77,25 @@ where
         )?;
 
         if duration_used == 0 {
-            for (index, config) in configs.iter().enumerate() {
-                let mut line = &mut state.lines[index];
-                line.text = format_totp(config, now, name_max_length);
-                line.modified = true;
-            }
+            list_view.set_line_items(create_line_items(now));
         }
 
-        for (index, line) in state.lines.iter_mut().enumerate() {
-            if line.modified {
-                if index == state.current_index {
-                    queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;
-                } else {
-                    queue!(w, style::Print(line.text.clone()))?;
-                };
-
-                line.modified = false;
-            }
-
-            queue!(w, cursor::MoveToNextLine(1))?;
-        }
+        list_view.display(w);
 
         w.flush()?;
 
-        if poll(Duration::from_millis(500))? {
+        if poll(Duration::from_millis(1000))? {
             let event = event::read()?;
 
-            if event == Event::Key(KeyCode::Char('j').into()) {
-                if state.current_index < state.max_index {
-                    // Old selected is modified, it is no longer selected
-                    state.lines[state.current_index].modified = true;
+            list_view.handle_event(&event);
 
-                    state.current_index = state.current_index.saturating_add(1);
-
-                    // New selection is modified, it is now selected
-                    state.lines[state.current_index].modified = true;
-                }
-            } else if event == Event::Key(KeyCode::Char('k').into()) {
-                // Old selected is modified, it is no longer selected
-                state.lines[state.current_index].modified = true;
-
-                state.current_index = state.current_index.saturating_sub(1);
-
-                // New selection is modified, it is now selected
-                state.lines[state.current_index].modified = true;
-            } else if event == Event::Key(KeyCode::Char('q').into()) {
+            if event == Event::Key(KeyCode::Char('q').into()) {
                 break;
-            } else if event == Event::Key(KeyCode::Enter.into()) {
-                let currently_selected = &configs[state.current_index];
-                let code = format!(
-                    "{:0digits$}",
-                    currently_selected.code(now),
-                    digits = currently_selected.digits as usize
-                );
-                clipboard
-                    .set_text(code)
-                    .expect("Could not copy to clipboard.");
             }
         }
     }
 
+    // Cleanup and reset the terminal when the user quits.
     execute!(
         w,
         style::ResetColor,
@@ -194,15 +135,15 @@ mod tests {
         let march_14_2020 = SystemTime::UNIX_EPOCH + Duration::new(1_584_188_800, 0);
         let assertions = [
             (
-                "Acme Inc.         | 640572 | 10/30",
+                "Acme Inc.         | 640572",
                 Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
             ),
             (
-                "Gizmo Corporation | 087439 | 10/30",
+                "Gizmo Corporation | 087439",
                 Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
             ),
             (
-                "Foo Industries    | 771990 | 10/30",
+                "Foo Industries    | 771990",
                 Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
             ),
         ];

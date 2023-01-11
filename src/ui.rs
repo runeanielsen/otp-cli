@@ -50,20 +50,25 @@ where
     let name_max_length = longest_name_char_count(configs).unwrap();
     let interval = 30;
 
-    let create_line_items = |now: SystemTime| -> Vec<LineItem> {
+    let create_line_items = |now: SystemTime| -> Vec<LineItem<String>> {
         configs
             .iter()
-            .map(|config| LineItem::new(&format_totp(config, now, name_max_length)))
+            .map(|config| {
+                LineItem::new(
+                    &format_totp(config, now, name_max_length),
+                    config.code(now).to_string(),
+                )
+            })
             .collect()
     };
 
     let mut list_view = ListView::new(
         create_line_items(SystemTime::now()),
-        Box::new(move |text| {
+        Box::new(move |value| {
             clipboard
                 .lock()
                 .unwrap()
-                .set_text(text)
+                .set_text(value)
                 .expect("Could not set text in clipboard.");
         }),
     );

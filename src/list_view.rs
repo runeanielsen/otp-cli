@@ -49,26 +49,35 @@ impl<T> ListView<T> {
 
     pub fn handle_event(&mut self, event: &Event) {
         if event == &Event::Key(KeyCode::Char('j').into()) {
-            if self.current_index < self.max_index() {
-                // Mark the last selection for redraw.
-                self.line_items[self.current_index].modified = true;
-
-                self.current_index = self.current_index.saturating_add(1);
-
-                // Mark the new selection for redraw.
-                self.line_items[self.current_index].modified = true;
-            }
+            self.select_next();
         } else if event == &Event::Key(KeyCode::Char('k').into()) {
-            // Mark the last selection for redraw.
-            self.line_items[self.current_index].modified = true;
-
-            self.current_index = self.current_index.saturating_sub(1);
-
-            // Mark the new selection for redraw.
-            self.line_items[self.current_index].modified = true;
+            self.select_prev();
         } else if event == &Event::Key(KeyCode::Enter.into()) {
             (self.selected_callback)(&self.line_items[self.current_index].value);
         }
+    }
+
+    fn select_next(&mut self) {
+        // Do not select next if we are at the end of the list.
+        if self.current_index < self.max_index() {
+            // Mark the last selection for redraw.
+            self.line_items[self.current_index].modified = true;
+
+            self.current_index = self.current_index.saturating_add(1);
+
+            // Mark the new selection for redraw.
+            self.line_items[self.current_index].modified = true;
+        }
+    }
+
+    fn select_prev(&mut self) {
+        // Mark the last selection for redraw.
+        self.line_items[self.current_index].modified = true;
+
+        self.current_index = self.current_index.saturating_sub(1);
+
+        // Mark the new selection for redraw.
+        self.line_items[self.current_index].modified = true;
     }
 
     fn max_index(&self) -> usize {

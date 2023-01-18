@@ -21,7 +21,15 @@ impl Totp {
         }
     }
 
-    pub fn code(&self, time: SystemTime) -> u32 {
+    pub fn code_padded(&self, time: SystemTime) -> String {
+        format!(
+            "{:0digits_width$}",
+            self.code(time),
+            digits_width = self.digits as usize
+        )
+    }
+
+    fn code(&self, time: SystemTime) -> u32 {
         let counter = time
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()

@@ -18,7 +18,7 @@ use crossterm::{
 };
 
 pub trait Display {
-    fn display(&mut self, w: &mut Stdout);
+    fn display(&mut self, w: &mut Stdout) -> Result<(), Box<dyn Error>>;
 }
 
 pub trait HandleEvent {
@@ -44,7 +44,7 @@ pub fn start(
 
         for element in &mut elements {
             element.refresh();
-            element.display(w);
+            element.display(w)?;
 
             w.flush()?;
         }

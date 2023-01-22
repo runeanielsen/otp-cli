@@ -1,4 +1,4 @@
-use std::{io::Stdout, time::SystemTime};
+use std::{error::Error, io::Stdout, time::SystemTime};
 
 use crossterm::{
     cursor, queue,
@@ -24,13 +24,14 @@ impl TotpLineParagraph {
 impl Element for TotpLineParagraph {}
 
 impl Display for TotpLineParagraph {
-    fn display(&mut self, w: &mut Stdout) {
+    fn display(&mut self, w: &mut Stdout) -> Result<(), Box<dyn Error>> {
         queue!(
             w,
             style::PrintStyledContent(self.line_paragraph.text.clone().grey()),
             cursor::MoveToNextLine(1)
-        )
-        .unwrap();
+        )?;
+
+        Ok(())
     }
 }
 

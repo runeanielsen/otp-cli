@@ -5,6 +5,7 @@ use crossterm::{
     event::{Event, KeyCode},
     queue, style,
 };
+use std::error::Error;
 use std::io::Stdout;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
@@ -51,7 +52,7 @@ impl TotpListView {
                 Box::new(move |totp| {
                     clipboard
                         .lock()
-                        .unwrap()
+                        .expect("Could not lock clipboard.")
                         .set_text(totp.code_padded(time))
                         .expect("Could not set text in clipboard.");
                 }),
@@ -63,13 +64,13 @@ impl TotpListView {
 impl Element for TotpListView {}
 
 impl Display for TotpListView {
-    fn display(&mut self, w: &mut Stdout) {
+    fn display(&mut self, w: &mut Stdout) -> Result<(), Box<dyn Error>> {
         for (index, line) in self.list_view.line_items.iter_mut().enumerate() {
             if line.modified {
                 if index == self.list_view.current_index {
-                    queue!(w, style::PrintStyledContent(line.text.clone().blue())).unwrap();
+                    queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;
                 } else {
-                    queue!(w, style::Print(line.text.clone())).unwrap();
+                    queue!(w, style::Print(line.text.clone()))?;
                 };
 
                 // After we have drawed it, we set it to no longer modified
@@ -77,8 +78,10 @@ impl Display for TotpListView {
                 line.modified = false;
             }
 
-            queue!(w, cursor::MoveToNextLine(1)).unwrap();
+            queue!(w, cursor::MoveToNextLine(1))?;
         }
+
+        Ok(())
     }
 }
 

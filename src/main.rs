@@ -8,7 +8,6 @@ use std::{
 };
 
 use arboard::Clipboard;
-use config::load;
 use totp::Totp;
 use tui::{TotpLineParagraph, TotpListView};
 
@@ -17,16 +16,14 @@ mod totp;
 mod tui;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let polling_interval = 1000;
     let mut stdout = stdout();
 
     let clipboard = Arc::new(Mutex::new(
         Clipboard::new().expect("Could not get access to the clipboard."),
     ));
 
-    let totps: Vec<Totp> = load()
-        .iter()
-        .map(|x| x.clone().expect("Could not parse configuration file."))
-        .collect();
+    let totps: Vec<Totp> = config::load_totps()?;
 
     tui::start(
         &mut stdout,
@@ -38,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Arc::clone(&clipboard),
             )),
         ],
-        1000,
+        polling_interval,
     )?;
 
     Ok(())

@@ -33,7 +33,7 @@ Otpauth://totp/Consulting Firm:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=C
     mock_data
         .split('\n')
         .map(|x| parse_google_format(x, digits, interval))
-        .collect::<Result<Vec<_>, _>>()
+        .collect()
 }
 
 fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, FormatError> {

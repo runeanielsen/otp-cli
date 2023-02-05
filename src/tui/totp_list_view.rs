@@ -18,6 +18,7 @@ use super::{Display, Element, HandleEvent, Refresh};
 pub struct TotpListView {
     totps: Vec<Totp>,
     list_view: ListView<Totp>,
+    interval: u64,
 }
 
 fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> String {
@@ -43,7 +44,12 @@ fn create_line_items(totps: &[Totp], time: SystemTime) -> Vec<LineItem<Totp>> {
 }
 
 impl TotpListView {
-    pub fn new(time: SystemTime, totps: Vec<Totp>, clipboard: Arc<Mutex<Clipboard>>) -> Self {
+    pub fn new(
+        time: SystemTime,
+        interval: u64,
+        totps: Vec<Totp>,
+        clipboard: Arc<Mutex<Clipboard>>,
+    ) -> Self {
         let line_items = create_line_items(&totps, time);
         Self {
             totps,
@@ -57,6 +63,7 @@ impl TotpListView {
                         .expect("Could not set text in clipboard.");
                 }),
             ),
+            interval,
         }
     }
 }
@@ -101,9 +108,8 @@ impl HandleEvent for TotpListView {
 
 impl Refresh for TotpListView {
     fn refresh(&mut self) {
-        let interval = 30;
         let now = SystemTime::now();
-        let duration_used = totp::duration_used(interval, now);
+        let duration_used = totp::duration_used(self.interval, now);
         if duration_used == 0 {
             self.list_view
                 .set_line_items(create_line_items(&self.totps, now));
@@ -119,24 +125,31 @@ mod tests {
 
     #[test]
     fn totp_is_formatted_correctly() {
+        let interval = 30;
+        let digits = 6;
+
         let march_14_2020 = SystemTime::UNIX_EPOCH + Duration::new(1_584_188_800, 0);
         let assertions = [
             (
                 "Acme Inc.         | 640572",
-                Totp::new("Acme Inc.", "8n4mzt7w", 6, 30),
+                Totp::new("Acme Inc.", "8n4mzt7w", digits, interval),
             ),
             (
                 "Gizmo Corporation | 087439",
-                Totp::new("Gizmo Corporation", "xkc2j8fh", 6, 30),
+                Totp::new("Gizmo Corporation", "xkc2j8fh", digits, interval),
             ),
             (
                 "Foo Industries    | 771990",
-                Totp::new("Foo Industries", "9s6bk3jq", 6, 30),
+                Totp::new("Foo Industries", "9s6bk3jq", digits, interval),
             ),
         ];
 
+        let name_max_length = 17;
         for (expected, input) in assertions {
-            assert_eq!(expected, format_totp(&input, march_14_2020, 17));
+            assert_eq!(
+                expected,
+                format_totp(&input, march_14_2020, name_max_length)
+            );
         }
     }
 }

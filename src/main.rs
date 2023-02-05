@@ -16,14 +16,17 @@ mod totp;
 mod tui;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let polling_interval = 1000;
+    const INTERVAL: u64 = 30;
+    const DIGITS: u32 = 6;
+    const POLL_INTERVAL: u64 = 1000;
+
     let mut stdout = stdout();
 
     let clipboard = Arc::new(Mutex::new(
         Clipboard::new().expect("Could not get access to the clipboard."),
     ));
 
-    let totps: Vec<Totp> = config::load_totps()?;
+    let totps: Vec<Totp> = config::load_totps(DIGITS, INTERVAL)?;
 
     tui::start(
         &mut stdout,
@@ -31,11 +34,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             Box::new(TotpLineParagraph::new()),
             Box::new(TotpListView::new(
                 SystemTime::now(),
+                INTERVAL,
                 totps,
                 Arc::clone(&clipboard),
             )),
         ],
-        polling_interval,
+        POLL_INTERVAL,
     )?;
 
     Ok(())

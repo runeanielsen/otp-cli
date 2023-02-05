@@ -30,12 +30,15 @@ fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> Strin
     )
 }
 
+fn longest_string(strs: &[&str]) -> Option<usize> {
+    strs.iter()
+        .max_by(|x, y| x.chars().count().cmp(&y.chars().count()))
+        .map(|config| config.chars().count())
+}
+
 fn create_line_items(totps: &[Totp], time: SystemTime) -> Vec<LineItem<Totp>> {
-    let max_name_length = totps
-        .iter()
-        .max_by(|x, y| x.name.chars().count().cmp(&y.name.chars().count()))
-        .map(|config| config.name.chars().count())
-        .expect("Could not get the longest name count.");
+    let names: Vec<&str> = totps.iter().map(|x| x.name.as_str()).collect();
+    let max_name_length = longest_string(&names).expect("Could not get longest name.");
 
     totps
         .iter()
@@ -122,6 +125,21 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+
+    #[test]
+    fn find_longest_string() {
+        let assertions = [
+            (vec!["Hello", "Hello World!", "Wow!"], Some(12)),
+            (vec!["Hello", "Wow!"], Some(5)),
+            (vec!["", "Wow!"], Some(4)),
+            (vec!["", ""], Some(0)),
+            (vec![], None),
+        ];
+
+        for (input, expected) in assertions {
+            assert_eq!(longest_string(&input), expected);
+        }
+    }
 
     #[test]
     fn totp_is_formatted_correctly() {

@@ -1,4 +1,4 @@
-use std::{error::Error, fmt};
+use std::{convert::Into, error::Error, fmt, fs, path::PathBuf};
 
 use regex::Regex;
 
@@ -17,22 +17,21 @@ impl fmt::Display for FormatError {
 
 impl Error for FormatError {}
 
-pub fn load_totps(digits: u32, interval: u64) -> Result<Vec<Totp>, FormatError> {
-    let mock_data =
-        "Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp
-Otpauth://totp/Widget Co:me@my-domain.com?secret=JXQWZ4TVRNUP5YKM&issuer=WidgetCo
-Otpauth://totp/Foobar Inc.:me@my-domain.com?secret=KBYXA6USSPQ7ZLNN&issuer=FoobarInc
-Otpauth://totp/Globex Corp.:me@my-domain.com?secret=LCZYB7VTTSR8AMOO&issuer=GlobexCorp
-Otpauth://totp/Big Corp.:me@my-domain.com?secret=MDAZC8WUUTS9BNPP&issuer=BigCorp
-Otpauth://totp/Small Firm.:me@my-domain.com?secret=NEBAD9XVVUT0COQQ&issuer=SmallFirm
-Otpauth://totp/Mega Corp.:me@my-domain.com?secret=OFCAE0YWWVU1DPRR&issuer=MegaCorp
-Otpauth://totp/Tech Co.:me@my-domain.com?secret=PGDBF1ZXWXU2EQSS&issuer=TechCo
-Otpauth://totp/Startup Inc.:me@my-domain.com?secret=QHECK2AYXYU3FRTT&issuer=StartupInc
-Otpauth://totp/Consulting Firm:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=ConsultingFirm";
+pub fn load_totps(
+    config_dir_path: PathBuf,
+    digits: u32,
+    interval: u64,
+) -> Result<Vec<Totp>, Box<dyn Error>> {
+    let totps_file_path: PathBuf = [config_dir_path, PathBuf::from("totp.txt")]
+        .iter()
+        .collect();
+    let totp_secret_file = fs::read_to_string(totps_file_path)?;
 
-    mock_data
+    totp_secret_file
         .split('\n')
-        .map(|x| parse_google_format(x, digits, interval))
+        .filter(|x| !x.is_empty())
+        .map(str::trim)
+        .map(|x| parse_google_format(x, digits, interval).map_err(Into::into))
         .collect()
 }
 

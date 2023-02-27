@@ -4,6 +4,8 @@ Minimalist TUI application that displays TOTP.
 
 ## Note
 
+This is not cross-platform, only tested on Unix based systems.
+
 Project is still under development and not ready for use.
 
 ## Key-bindings

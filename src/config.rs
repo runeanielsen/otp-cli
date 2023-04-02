@@ -5,17 +5,18 @@ use regex::Regex;
 use crate::totp::Totp;
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum FormatError {
+pub enum TotpSecretFileError {
+    NotFound(String),
     InvalidFormat(String),
 }
 
-impl fmt::Display for FormatError {
+impl fmt::Display for TotpSecretFileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "FormatError:")
     }
 }
 
-impl Error for FormatError {}
+impl Error for TotpSecretFileError {}
 
 pub fn load_totps(
     config_dir_path: PathBuf,
@@ -28,16 +29,14 @@ pub fn load_totps(
         .collect();
 
     let totp_secret_file = match fs::read_to_string(&totps_file_path) {
-        Ok(file_content) => file_content,
+        Ok(file_content) => Ok(file_content),
         Err(error) => match error.kind() {
-            ErrorKind::NotFound => {
-                panic!(
-                    "Could not find TOTP secret file '{}'.",
-                    totps_file_path
-                        .to_str()
-                        .expect("Could not convert TOTP-secrets file-path to valid UTF-8.")
-                )
-            }
+            ErrorKind::NotFound => Err(TotpSecretFileError::NotFound(format!(
+                "Could not find TOTP secret file '{}'.",
+                totps_file_path
+                    .to_str()
+                    .expect("Could not convert TOTP secret file-path to valid UTF-8.")
+            ))),
             unhandled_err => {
                 panic!(
                     "Problem opening the TOTP-secrets file '{}': '{unhandled_err}'.",
@@ -47,7 +46,7 @@ pub fn load_totps(
                 );
             }
         },
-    };
+    }?;
 
     totp_secret_file
         .split('\n')
@@ -57,7 +56,7 @@ pub fn load_totps(
         .collect()
 }
 
-fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, FormatError> {
+fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, TotpSecretFileError> {
     let re = Regex::new(r"^Otpauth://totp/(.*):.*?secret=(.*)&issuer=.*$")
         .expect("Could not parse regex.");
 
@@ -67,7 +66,7 @@ fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, Form
     {
         Ok(totp)
     } else {
-        Err(FormatError::InvalidFormat(format!(
+        Err(TotpSecretFileError::InvalidFormat(format!(
             "Could not parse the line, invalid format: '{s}'."
         )))
     }
@@ -129,7 +128,7 @@ mod tests {
         for input in assertions {
             assert!(matches!(
                 parse_google_format(input, digits, interval),
-                Err(FormatError::InvalidFormat(_))
+                Err(TotpSecretFileError::InvalidFormat(_))
             ));
         }
     }

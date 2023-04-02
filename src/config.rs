@@ -1,4 +1,4 @@
-use std::{convert::Into, error::Error, fmt, fs, path::PathBuf};
+use std::{convert::Into, error::Error, fmt, fs, io::ErrorKind, path::PathBuf};
 
 use regex::Regex;
 
@@ -22,10 +22,32 @@ pub fn load_totps(
     digits: u32,
     interval: u64,
 ) -> Result<Vec<Totp>, Box<dyn Error>> {
-    let totps_file_path: PathBuf = [config_dir_path, PathBuf::from("totp.txt")]
+    let config_file_name = "totp.txt";
+    let totps_file_path: PathBuf = [config_dir_path, PathBuf::from(config_file_name)]
         .iter()
         .collect();
-    let totp_secret_file = fs::read_to_string(totps_file_path)?;
+
+    let totp_secret_file = match fs::read_to_string(&totps_file_path) {
+        Ok(file_content) => file_content,
+        Err(error) => match error.kind() {
+            ErrorKind::NotFound => {
+                panic!(
+                    "Could not find TOTP secret file '{}'.",
+                    totps_file_path
+                        .to_str()
+                        .expect("Could not convert TOTP-secrets file-path to valid UTF-8.")
+                )
+            }
+            unhandled_err => {
+                panic!(
+                    "Problem opening the TOTP-secrets file '{}': '{unhandled_err}'.",
+                    totps_file_path
+                        .to_str()
+                        .expect("Could not convert TOTP secret file-path to valid UTF-8.")
+                );
+            }
+        },
+    };
 
     totp_secret_file
         .split('\n')

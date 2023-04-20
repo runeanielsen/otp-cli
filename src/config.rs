@@ -28,7 +28,7 @@ pub fn load_totps(
         .iter()
         .collect();
 
-    let totp_secret_file = match fs::read_to_string(&totps_file_path) {
+    let secret_file_content = match fs::read_to_string(&totps_file_path) {
         Ok(file_content) => Ok(file_content),
         Err(error) => match error.kind() {
             ErrorKind::NotFound => Err(TotpSecretFileError::NotFound(format!(
@@ -48,7 +48,7 @@ pub fn load_totps(
         },
     }?;
 
-    totp_secret_file
+    secret_file_content
         .split('\n')
         .filter(|x| !x.is_empty())
         .map(str::trim)

@@ -4,7 +4,7 @@ Minimalist TUI application that displays TOTP.
 
 ## Note
 
-This is not cross-platform, only tested on Unix based systems.
+This is not cross-platform, only tested on Linux and might work on other Unix-like systems, but never tested.
 
 Project is still under development and not ready for use.
 

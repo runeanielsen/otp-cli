@@ -44,9 +44,9 @@ impl Totp {
 
         let offset = (digest[19] & 0xf) as usize;
         let code = u32::from(digest[offset] & 0x7f) << 24
-            | u32::from(digest[(offset + 1)]) << 16
-            | u32::from(digest[(offset + 2)]) << 8
-            | u32::from(digest[(offset + 3)]);
+            | u32::from(digest[offset + 1]) << 16
+            | u32::from(digest[offset + 2]) << 8
+            | u32::from(digest[offset + 3]);
 
         code % (10_u32).pow(self.digits)
     }

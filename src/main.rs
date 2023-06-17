@@ -2,9 +2,9 @@
 
 use std::{
     env,
-    error::Error,
     io::stdout,
     path::PathBuf,
+    process,
     sync::{Arc, Mutex},
     time::SystemTime,
 };
@@ -17,7 +17,7 @@ mod config;
 mod totp;
 mod tui;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     const INTERVAL: u64 = 30;
     const DIGITS: u32 = 6;
     const POLL_INTERVAL: u64 = 1000;
@@ -35,11 +35,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         .iter()
         .collect();
 
-    let totps: Vec<Totp> = config::load_totps(default_config_path, DIGITS, INTERVAL)?;
+    let totps: Vec<Totp> = match config::load_totps(default_config_path, DIGITS, INTERVAL) {
+        Ok(result) => result,
+        Err(err) => {
+            println!("Error: {}", err);
+            process::exit(1);
+        }
+    };
 
     let mut stdout = stdout();
 
-    tui::start(
+    match tui::start(
         &mut stdout,
         vec![
             Box::new(TotpLineParagraph::new()),
@@ -51,7 +57,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             )),
         ],
         POLL_INTERVAL,
-    )?;
-
-    Ok(())
+    ) {
+        Ok(_) => {}
+        Err(err) => {
+            println!("Error: {}", err);
+            process::exit(1);
+        }
+    };
 }

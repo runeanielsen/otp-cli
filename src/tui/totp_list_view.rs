@@ -149,16 +149,16 @@ mod tests {
         let march_14_2020 = SystemTime::UNIX_EPOCH + Duration::new(1_584_188_800, 0);
         let assertions = [
             (
-                "Acme Inc.         | 640572",
-                Totp::new("Acme Inc.", "8n4mzt7w", digits, interval),
+                "Acme Inc.         | 470961",
+                Totp::new("Acme Inc.", "ZDPCQ3LXMFRGIZTDONSWMZDF", digits, interval),
             ),
             (
-                "Gizmo Corporation | 087439",
-                Totp::new("Gizmo Corporation", "xkc2j8fh", digits, interval),
+                "Gizmo Corporation | 783941",
+                Totp::new("Gizmo Corporation", "54OMZJQ=", digits, interval),
             ),
             (
-                "Foo Industries    | 771990",
-                Totp::new("Foo Industries", "9s6bk3jq", digits, interval),
+                "Foo Industries    | 022136",
+                Totp::new("Foo Industries", "32XWIZLOMUVZWK4Q=", digits, interval),
             ),
         ];
 

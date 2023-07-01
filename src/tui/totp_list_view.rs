@@ -59,6 +59,7 @@ impl TotpListView {
             list_view: ListView::new(
                 line_items,
                 Box::new(move |totp| {
+                    let time = SystemTime::now();
                     clipboard
                         .lock()
                         .expect("Could not lock clipboard.")

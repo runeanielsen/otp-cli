@@ -12,7 +12,14 @@ pub enum TotpSecretFileError {
 
 impl fmt::Display for TotpSecretFileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FormatError:")
+        write!(
+            f,
+            "{}",
+            match self {
+                TotpSecretFileError::NotFound(message)
+                | TotpSecretFileError::InvalidFormat(message) => message,
+            }
+        )
     }
 }
 
@@ -57,7 +64,7 @@ pub fn load_totps(
 }
 
 fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, TotpSecretFileError> {
-    let re = Regex::new(r"^Otpauth://totp/(.*):.*?secret=(.*)&issuer=.*$")
+    let re = Regex::new(r"(?i)^otpauth://totp/(.*):.*?secret=(.*)&issuer=.*$")
         .expect("Could not parse regex.");
 
     if let Some(totp) = re

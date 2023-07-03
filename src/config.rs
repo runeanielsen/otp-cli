@@ -27,10 +27,10 @@ impl Error for TotpSecretFileError {}
 
 pub fn load_totps(
     config_dir_path: PathBuf,
+    config_file_name: &str,
     digits: u32,
     interval: u64,
 ) -> Result<Vec<Totp>, Box<dyn Error>> {
-    let config_file_name = "totp.txt";
     let totps_file_path: PathBuf = [config_dir_path, PathBuf::from(config_file_name)]
         .iter()
         .collect();

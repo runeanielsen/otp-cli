@@ -21,6 +21,7 @@ fn main() {
     const INTERVAL: u64 = 30;
     const DIGITS: u32 = 6;
     const POLL_INTERVAL: u64 = 1000;
+    const CONFIG_FILE_NAME: &str = "totp.txt";
 
     // Getting the home directory works fine on Unix systems,
     // and this project only supports UNIX based systems.
@@ -35,13 +36,14 @@ fn main() {
         .iter()
         .collect();
 
-    let totps: Vec<Totp> = match config::load_totps(default_config_path, DIGITS, INTERVAL) {
-        Ok(result) => result,
-        Err(err) => {
-            println!("Error: {}", err);
-            process::exit(1);
-        }
-    };
+    let totps: Vec<Totp> =
+        match config::load_totps(default_config_path, CONFIG_FILE_NAME, DIGITS, INTERVAL) {
+            Ok(result) => result,
+            Err(err) => {
+                println!("Error: {}", err);
+                process::exit(1);
+            }
+        };
 
     let mut stdout = stdout();
 

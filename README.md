@@ -34,3 +34,8 @@ Otpauth://totp/MyKeyName:me@my-domain.com?secret=QHECK2AYXYU3FRTT&issuer=Startup
 Otpauth://totp/MyKeyName:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=ConsultingFirm
 ```
 
+By default the secrets file should be located at `$HOME/.config/totp-cli/totp.txt` the name of the file can be switched out parsing in another filename, this is useful if multiple setups are needed.
+
+```sh
+totp-cli "my_other_totp_secrets_file.txt"
+```

@@ -21,7 +21,18 @@ fn main() {
     const INTERVAL: u64 = 30;
     const DIGITS: u32 = 6;
     const POLL_INTERVAL: u64 = 1000;
-    const CONFIG_FILE_NAME: &str = "totp.txt";
+
+    // Lets the user specify the path to the TOTP secrets file.
+    // In the future we might switch to using a configuration file,
+    // but for now it's fine just doing it the simple way.
+    // Could also be nice to pass the secrets in using STDIN, that way
+    // the user could decrypt their secrets file with their encryption algorithm of choice.
+    let args = env::args().collect::<Vec<_>>();
+    let config_file_name = if args.len() > 1 {
+        args[1].to_string()
+    } else {
+        "totp.txt".to_string()
+    };
 
     // Getting the home directory works fine on Unix systems,
     // and this project only supports UNIX based systems.
@@ -37,7 +48,7 @@ fn main() {
         .collect();
 
     let totps: Vec<Totp> =
-        match config::load_totps(default_config_path, CONFIG_FILE_NAME, DIGITS, INTERVAL) {
+        match config::load_totps(default_config_path, &config_file_name, DIGITS, INTERVAL) {
             Ok(result) => result,
             Err(err) => {
                 println!("Error: {}", err);

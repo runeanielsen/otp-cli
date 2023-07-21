@@ -37,13 +37,13 @@ impl Totp {
             .as_secs()
             / self.interval;
 
-        let x = base32::decode(
+        let decoded_secret = base32::decode(
             Alphabet::RFC4648 { padding: false },
             &self.secret.to_ascii_uppercase(),
         )
         .unwrap();
 
-        let digest = Hmac::<Sha1>::new_from_slice(&x)
+        let digest = Hmac::<Sha1>::new_from_slice(&decoded_secret)
             .unwrap()
             .chain_update(counter.to_be_bytes())
             .finalize()

@@ -51,7 +51,7 @@ fn main() {
         match config::load_totps(default_config_path, &config_file_name, DIGITS, INTERVAL) {
             Ok(result) => result,
             Err(err) => {
-                println!("Error: {}", err);
+                println!("Error: {err}");
                 process::exit(1);
             }
         };
@@ -73,7 +73,7 @@ fn main() {
     ) {
         Ok(_) => {}
         Err(err) => {
-            println!("Error: {}", err);
+            println!("Error: {err}");
             process::exit(1);
         }
     };

@@ -77,7 +77,7 @@ impl Element for TotpListView {}
 impl Display for TotpListView {
     fn display(&mut self, w: &mut Stdout) -> Result<(), Box<dyn Error>> {
         for (index, line) in self.list_view.line_items.iter_mut().enumerate() {
-            if line.modified {
+            if line.is_modified() {
                 if index == self.list_view.current_index {
                     queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;
                 } else {
@@ -91,9 +91,9 @@ impl Display for TotpListView {
                     queue!(w, style::Print("  "))?;
                 }
 
-                // After we have drawed it, we set it to no longer modified
-                // because we do not want to draw it again.
-                line.modified = false;
+                // After we have drawed it, we set it to no longer modified,
+                // otherwise it would be redrawn each iteration.
+                line.mark_as_unmodified();
             }
 
             queue!(w, cursor::MoveToNextLine(1))?;

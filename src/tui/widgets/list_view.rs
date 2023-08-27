@@ -20,16 +20,17 @@ impl<T> ListView<T> {
     pub fn select_next(&mut self) {
         // Do not select next if we are at the end of the list.
         if self.current_index < self.max_index() {
-            self.line_items[self.current_index].modified = true;
+            self.line_items[self.current_index].mark_as_modified();
             self.current_index = self.current_index.saturating_add(1);
-            self.line_items[self.current_index].modified = true;
+            self.line_items[self.current_index].mark_as_modified();
         }
     }
 
     pub fn select_prev(&mut self) {
-        self.line_items[self.current_index].modified = true;
+        // Mark both the old and the new selected index to make sure they're redrawn.
+        self.line_items[self.current_index].mark_as_modified();
         self.current_index = self.current_index.saturating_sub(1);
-        self.line_items[self.current_index].modified = true;
+        self.line_items[self.current_index].mark_as_modified();
     }
 
     pub fn mark_selected_line_item(&mut self) {
@@ -53,7 +54,7 @@ impl<T> ListView<T> {
 pub struct LineItem<T> {
     pub text: String,
     pub value: T,
-    pub modified: bool,
+    modified: bool,
     pub marked: bool,
 }
 
@@ -77,7 +78,15 @@ impl<T> LineItem<T> {
         self.mark_as_modified();
     }
 
-    fn mark_as_modified(&mut self) {
+    pub fn is_modified(&self) -> bool {
+        self.modified
+    }
+
+    pub fn mark_as_modified(&mut self) {
         self.modified = true;
+    }
+
+    pub fn mark_as_unmodified(&mut self) {
+        self.modified = false;
     }
 }

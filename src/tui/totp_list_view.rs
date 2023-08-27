@@ -19,6 +19,8 @@ pub struct TotpListView {
     totps: Vec<Totp>,
     list_view: ListView<Totp>,
     interval: u64,
+    // Refreshed flag is there to avoid multiple refreshes in a row when duration is 0.
+    refreshed: bool,
 }
 
 fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> String {
@@ -68,6 +70,7 @@ impl TotpListView {
                 }),
             ),
             interval,
+            refreshed: false,
         }
     }
 }
@@ -122,9 +125,14 @@ impl Refresh for TotpListView {
     fn refresh(&mut self) {
         let now = SystemTime::now();
         let duration_used = totp::duration_used(self.interval, now);
-        if duration_used == 0 {
+        // The refreshed flag is set to avoid an issue where on duration 0,
+        // the view is refreshed multiple times when interacting with the TUI.
+        if !self.refreshed && duration_used == 0 {
             self.list_view
                 .set_line_items(create_line_items(&self.totps, now));
+            self.refreshed = true;
+        } else if self.refreshed {
+            self.refreshed = false;
         }
     }
 }

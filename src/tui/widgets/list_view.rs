@@ -52,10 +52,10 @@ impl<T> ListView<T> {
 }
 
 pub struct LineItem<T> {
-    pub text: String,
-    pub value: T,
+    text: String,
+    value: T,
     modified: bool,
-    pub marked: bool,
+    marked: bool,
 }
 
 impl<T> LineItem<T> {
@@ -66,6 +66,18 @@ impl<T> LineItem<T> {
             modified: true,
             marked: false,
         }
+    }
+
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    pub fn value(&self) -> &T {
+        &self.value
+    }
+
+    pub fn is_marked(&self) -> bool {
+        self.marked
     }
 
     pub fn mark(&mut self) {

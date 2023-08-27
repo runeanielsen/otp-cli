@@ -79,12 +79,12 @@ impl Display for TotpListView {
         for (index, line) in self.list_view.line_items.iter_mut().enumerate() {
             if line.is_modified() {
                 if index == self.list_view.current_index {
-                    queue!(w, style::PrintStyledContent(line.text.clone().blue()))?;
+                    queue!(w, style::PrintStyledContent(line.text().blue()))?;
                 } else {
-                    queue!(w, style::Print(line.text.clone()))?;
+                    queue!(w, style::Print(line.text()))?;
                 };
 
-                if line.marked {
+                if line.is_marked() {
                     queue!(w, style::Print(" *".blue()))?;
                 } else {
                     // When it is no longer marked we need to remove the mark.
@@ -112,7 +112,7 @@ impl HandleEvent for TotpListView {
         } else if event == &Event::Key(KeyCode::Enter.into()) {
             self.list_view.mark_selected_line_item();
             (self.list_view.selected_callback)(
-                &self.list_view.line_items[self.list_view.current_index].value,
+                self.list_view.line_items[self.list_view.current_index].value(),
             );
         }
     }

@@ -41,7 +41,7 @@ impl<T> ListView<T> {
 
     fn unmark_all_line_items(&mut self) {
         for line_item in &mut self.line_items {
-            if line_item.marked {
+            if line_item.is_marked() {
                 line_item.unmark();
             }
         }

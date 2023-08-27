@@ -84,6 +84,13 @@ impl Display for TotpListView {
                     queue!(w, style::Print(line.text.clone()))?;
                 };
 
+                if line.marked {
+                    queue!(w, style::Print(" *".blue()))?;
+                } else {
+                    // When it is no longer marked we need to remove the mark.
+                    queue!(w, style::Print("  "))?;
+                }
+
                 // After we have drawed it, we set it to no longer modified
                 // because we do not want to draw it again.
                 line.modified = false;
@@ -103,6 +110,7 @@ impl HandleEvent for TotpListView {
         } else if event == &Event::Key(KeyCode::Char('k').into()) {
             self.list_view.select_prev();
         } else if event == &Event::Key(KeyCode::Enter.into()) {
+            self.list_view.mark_selected_line_item();
             (self.list_view.selected_callback)(
                 &self.list_view.line_items[self.list_view.current_index].value,
             );

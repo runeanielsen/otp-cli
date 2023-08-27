@@ -32,6 +32,19 @@ impl<T> ListView<T> {
         self.line_items[self.current_index].modified = true;
     }
 
+    pub fn mark_selected_line_item(&mut self) {
+        self.unmark_all_line_items();
+        self.line_items[self.current_index].mark();
+    }
+
+    fn unmark_all_line_items(&mut self) {
+        for line_item in &mut self.line_items {
+            if line_item.marked {
+                line_item.unmark();
+            }
+        }
+    }
+
     fn max_index(&self) -> usize {
         self.line_items.len().saturating_sub(1)
     }
@@ -41,6 +54,7 @@ pub struct LineItem<T> {
     pub text: String,
     pub value: T,
     pub modified: bool,
+    pub marked: bool,
 }
 
 impl<T> LineItem<T> {
@@ -49,6 +63,21 @@ impl<T> LineItem<T> {
             text: text.to_string(),
             value,
             modified: true,
+            marked: false,
         }
+    }
+
+    pub fn mark(&mut self) {
+        self.marked = true;
+        self.mark_as_modified();
+    }
+
+    pub fn unmark(&mut self) {
+        self.marked = false;
+        self.mark_as_modified();
+    }
+
+    fn mark_as_modified(&mut self) {
+        self.modified = true;
     }
 }

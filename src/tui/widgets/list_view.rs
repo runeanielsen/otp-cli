@@ -20,6 +20,7 @@ impl<T> ListView<T> {
     pub fn select_next(&mut self) {
         // Do not select next if we are at the end of the list.
         if self.current_index < self.max_index() {
+            // Mark both the old and the new selected index to make sure they're redrawn.
             self.line_items[self.current_index].mark_as_modified();
             self.current_index = self.current_index.saturating_add(1);
             self.line_items[self.current_index].mark_as_modified();

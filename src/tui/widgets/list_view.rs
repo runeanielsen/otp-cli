@@ -103,3 +103,56 @@ impl<T> LineItem<T> {
         self.modified = false;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn initialization_of_list_view_list_items_set_correctly() {
+        let line_items: Vec<LineItem<i32>> = vec![
+            LineItem::new("First", 1),
+            LineItem::new("Second", 2),
+            LineItem::new("Third", 3),
+        ];
+
+        let list_view: ListView<i32> = ListView::new(line_items, Box::new(|_| {}));
+
+        assert_eq!(list_view.line_items[0].text, "First");
+        assert_eq!(list_view.line_items[0].value, 1);
+
+        assert_eq!(list_view.line_items[1].text, "Second");
+        assert_eq!(list_view.line_items[1].value, 2);
+
+        assert_eq!(list_view.line_items[2].text, "Third");
+        assert_eq!(list_view.line_items[2].value, 3);
+    }
+
+    #[test]
+    fn set_line_items_correctly_sets_new_line_items() {
+        let line_items: Vec<LineItem<i32>> = vec![
+            LineItem::new("First", 1),
+            LineItem::new("Second", 2),
+            LineItem::new("Third", 3),
+        ];
+
+        let mut list_view: ListView<i32> = ListView::new(line_items, Box::new(|_| {}));
+
+        let new_line_items: Vec<LineItem<i32>> = vec![
+            LineItem::new("NewFirst", 11),
+            LineItem::new("NewSecond", 22),
+            LineItem::new("NewThird", 33),
+        ];
+
+        list_view.set_line_items(new_line_items);
+
+        assert_eq!(list_view.line_items[0].text, "NewFirst");
+        assert_eq!(list_view.line_items[0].value, 11);
+
+        assert_eq!(list_view.line_items[1].text, "NewSecond");
+        assert_eq!(list_view.line_items[1].value, 22);
+
+        assert_eq!(list_view.line_items[2].text, "NewThird");
+        assert_eq!(list_view.line_items[2].value, 33);
+    }
+}

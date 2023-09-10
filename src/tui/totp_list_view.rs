@@ -114,9 +114,7 @@ impl HandleEvent for TotpListView {
             self.list_view.select_prev();
         } else if event == &Event::Key(KeyCode::Enter.into()) {
             self.list_view.mark_selected_line_item();
-            (self.list_view.selected_callback)(
-                self.list_view.line_items[self.list_view.current_index].value(),
-            );
+            (self.list_view.selected_callback)(self.list_view.get_selected_line_item().value());
         }
     }
 }

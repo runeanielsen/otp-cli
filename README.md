@@ -17,7 +17,7 @@ Project is still under development and not ready for use.
 
 ## Configuration file
 
-It uses the "Google Authenticator format".
+It uses the URI string format, the same format used by Google authenticator and many other OTP applications.
 
 Example of configuration.
 

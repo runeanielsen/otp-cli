@@ -59,11 +59,15 @@ pub fn load_totps(
         .split('\n')
         .filter(|x| !x.is_empty())
         .map(str::trim)
-        .map(|x| parse_google_format(x, digits, interval).map_err(Into::into))
+        .map(|x| parse_uri_string_format(x, digits, interval).map_err(Into::into))
         .collect()
 }
 
-fn parse_google_format(s: &str, digits: u32, interval: u64) -> Result<Totp, TotpSecretFileError> {
+fn parse_uri_string_format(
+    s: &str,
+    digits: u32,
+    interval: u64,
+) -> Result<Totp, TotpSecretFileError> {
     let re = Regex::new(r"(?i)^otpauth://totp/(.*):.*?secret=(.*)&issuer=.*$")
         .expect("Could not parse regex.");
 
@@ -84,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn can_parse_google_authentication_format() {
+    fn can_parse_uri_string_format() {
         let interval = 30;
         let digits = 6;
 
@@ -111,12 +115,15 @@ mod tests {
              "Otpauth://totp/Consulting Firm:me@my-domain.com?secret=RIFDL3BZYZU4GSUU&issuer=ConsultingFirm")];
 
         for (expected, input) in assertions {
-            assert_eq!(Ok(expected), parse_google_format(input, digits, interval));
+            assert_eq!(
+                Ok(expected),
+                parse_uri_string_format(input, digits, interval)
+            );
         }
     }
 
     #[test]
-    fn invalid_google_format_error() {
+    fn invalid_uri_string_format_results_in_invalid_format_error() {
         let interval = 30;
         let digits = 6;
 
@@ -134,7 +141,7 @@ mod tests {
 
         for input in assertions {
             assert!(matches!(
-                parse_google_format(input, digits, interval),
+                parse_uri_string_format(input, digits, interval),
                 Err(TotpSecretFileError::InvalidFormat(_))
             ));
         }

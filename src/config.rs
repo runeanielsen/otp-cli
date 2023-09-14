@@ -78,7 +78,7 @@ fn parse_uri_string_format(
         Ok(totp)
     } else {
         Err(TotpSecretFileError::InvalidFormat(format!(
-            "Could not parse the line, invalid format: '{s}'."
+            "Could not parse the line, invalid format: '{s}', please refer to the documentation."
         )))
     }
 }

@@ -71,7 +71,7 @@ fn main() {
         ],
         POLL_INTERVAL,
     ) {
-        Ok(_) => {}
+        Ok(()) => {}
         Err(err) => {
             println!("Error: {err}");
             process::exit(1);

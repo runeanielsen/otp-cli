@@ -1,5 +1,7 @@
 use arboard::Clipboard;
+use crossterm::event::KeyEvent;
 use crossterm::style::Stylize;
+use crossterm::terminal::{Clear, ClearType};
 use crossterm::{
     cursor,
     event::{Event, KeyCode},
@@ -15,12 +17,31 @@ use crate::totp::{self, Totp};
 use super::widgets::{LineItem, ListView};
 use super::{Display, Element, HandleEvent, Refresh};
 
+enum TotpCommandType {
+    Search,
+}
+
+struct TotpCommand {
+    command_type: TotpCommandType,
+    input: String,
+}
+
+impl TotpCommand {
+    fn new(command_type: TotpCommandType) -> Self {
+        Self {
+            command_type,
+            input: String::new(),
+        }
+    }
+}
+
 pub struct TotpListView {
     totps: Vec<Totp>,
     list_view: ListView<Totp>,
     interval: u64,
     // Refreshed flag is there to avoid multiple refreshes in a row when duration is 0.
     refreshed: bool,
+    command: Option<TotpCommand>,
 }
 
 fn format_totp(config: &Totp, time: SystemTime, name_max_length: usize) -> String {
@@ -48,6 +69,24 @@ fn create_line_items(totps: &[Totp], time: SystemTime) -> Vec<LineItem<Totp>> {
         .collect()
 }
 
+fn find_line_item_matching_search(
+    line_items: &[LineItem<Totp>],
+    search_text: &str,
+) -> Option<usize> {
+    let mut found_index: Option<usize> = None;
+    for (index, line_item) in line_items.iter().enumerate() {
+        if line_item
+            .text()
+            .to_lowercase()
+            .starts_with(&search_text.to_lowercase())
+        {
+            found_index = Some(index);
+        }
+    }
+
+    found_index
+}
+
 impl TotpListView {
     pub fn new(
         time: SystemTime,
@@ -71,6 +110,7 @@ impl TotpListView {
             ),
             interval,
             refreshed: false,
+            command: None,
         }
     }
 }
@@ -79,27 +119,29 @@ impl Element for TotpListView {}
 
 impl Display for TotpListView {
     fn display(&mut self, w: &mut Stdout) -> Result<(), Box<dyn Error>> {
+        queue!(w, Clear(ClearType::FromCursorDown))?;
+
         for (index, line) in self.list_view.line_items.iter_mut().enumerate() {
-            if line.is_modified() {
-                if index == self.list_view.current_index {
-                    queue!(w, style::PrintStyledContent(line.text().blue()))?;
-                } else {
-                    queue!(w, style::Print(line.text()))?;
-                };
+            if index == self.list_view.current_index {
+                queue!(w, style::PrintStyledContent(line.text().blue()))?;
+            } else {
+                queue!(w, style::Print(line.text()))?;
+            };
 
-                if line.is_marked() {
-                    queue!(w, style::Print(" *".blue()))?;
-                } else {
-                    // When it is no longer marked we need to remove the mark.
-                    queue!(w, style::Print("  "))?;
-                }
-
-                // After we have drawed it, we set it to no longer modified,
-                // otherwise it would be redrawn each iteration.
-                line.mark_as_unmodified();
+            if line.is_marked() {
+                // When the line is marked we want to indicate it with a '*'.
+                queue!(w, style::Print(" *".blue()))?;
             }
 
             queue!(w, cursor::MoveToNextLine(1))?;
+        }
+
+        match &self.command {
+            Some(command) => {
+                queue!(w, cursor::MoveToNextLine(1))?;
+                queue!(w, style::Print("/".to_string() + &command.input))?;
+            }
+            None => {}
         }
 
         Ok(())
@@ -108,13 +150,44 @@ impl Display for TotpListView {
 
 impl HandleEvent for TotpListView {
     fn handle_event(&mut self, event: &Event) {
-        if event == &Event::Key(KeyCode::Char('j').into()) {
-            self.list_view.select_next();
-        } else if event == &Event::Key(KeyCode::Char('k').into()) {
-            self.list_view.select_prev();
-        } else if event == &Event::Key(KeyCode::Enter.into()) {
-            self.list_view.mark_selected_line_item();
-            (self.list_view.selected_callback)(self.list_view.get_selected_line_item().value());
+        match &mut self.command {
+            Some(command) => match command.command_type {
+                TotpCommandType::Search => {
+                    if event == &Event::Key(KeyCode::Backspace.into()) {
+                        command.input.pop();
+                    } else if event == &Event::Key(KeyCode::Enter.into()) {
+                        self.command = None;
+                    } else if let Event::Key(KeyEvent {
+                        code: KeyCode::Char(char),
+                        modifiers: _,
+                        kind: _,
+                        state: _,
+                    }) = event
+                    {
+                        command.input.push(*char);
+                        if let Some(match_index) = find_line_item_matching_search(
+                            &self.list_view.line_items,
+                            &command.input,
+                        ) {
+                            self.list_view.current_index = match_index;
+                        };
+                    }
+                }
+            },
+            _ => {
+                if event == &Event::Key(KeyCode::Char('j').into()) {
+                    self.list_view.select_next();
+                } else if event == &Event::Key(KeyCode::Char('k').into()) {
+                    self.list_view.select_prev();
+                } else if event == &Event::Key(KeyCode::Enter.into()) {
+                    self.list_view.mark_selected_line_item();
+                    (self.list_view.selected_callback)(
+                        self.list_view.get_selected_line_item().value(),
+                    );
+                } else if event == &Event::Key(KeyCode::Char('/').into()) {
+                    self.command = Some(TotpCommand::new(TotpCommandType::Search));
+                }
+            }
         }
     }
 }

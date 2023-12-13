@@ -6,8 +6,6 @@ Minimalist TUI application that displays TOTP.
 
 This is not cross-platform, only tested on Linux and might work on other Unix-like systems, but never tested.
 
-Project is still under development and not ready for use.
-
 ## Key-bindings
 
 - `k` to move up.

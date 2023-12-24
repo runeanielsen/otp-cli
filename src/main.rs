@@ -54,7 +54,7 @@ fn main() {
     let totps: Vec<Totp> = match config::load_totps(&config_file_path, DIGITS, INTERVAL) {
         Ok(result) => result,
         Err(err) => {
-            println!("Error: {err}");
+            eprintln!("Error: {err}");
             process::exit(1);
         }
     };
@@ -76,7 +76,7 @@ fn main() {
     ) {
         Ok(()) => {}
         Err(err) => {
-            println!("Error: {err}");
+            eprintln!("Error: {err}");
             process::exit(1);
         }
     };

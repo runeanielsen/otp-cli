@@ -26,28 +26,23 @@ impl fmt::Display for TotpSecretFileError {
 impl Error for TotpSecretFileError {}
 
 pub fn load_totps(
-    config_dir_path: PathBuf,
-    config_file_name: &str,
+    config_file_path: &PathBuf,
     digits: u32,
     interval: u64,
 ) -> Result<Vec<Totp>, Box<dyn Error>> {
-    let totps_file_path: PathBuf = [config_dir_path, PathBuf::from(config_file_name)]
-        .iter()
-        .collect();
-
-    let secret_file_content = match fs::read_to_string(&totps_file_path) {
+    let secret_file_content = match fs::read_to_string(config_file_path) {
         Ok(file_content) => Ok(file_content),
         Err(error) => match error.kind() {
             ErrorKind::NotFound => Err(TotpSecretFileError::NotFound(format!(
                 "Could not find TOTP secret file '{}'.",
-                totps_file_path
+                config_file_path
                     .to_str()
                     .expect("Could not convert TOTP secret file-path to valid UTF-8.")
             ))),
             unhandled_err => {
                 panic!(
                     "Problem opening the TOTP-secrets file '{}': '{unhandled_err}'.",
-                    totps_file_path
+                    config_file_path
                         .to_str()
                         .expect("Could not convert TOTP secret file-path to valid UTF-8.")
                 );

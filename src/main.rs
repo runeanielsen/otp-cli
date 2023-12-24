@@ -47,14 +47,17 @@ fn main() {
         .iter()
         .collect();
 
-    let totps: Vec<Totp> =
-        match config::load_totps(default_config_path, &config_file_name, DIGITS, INTERVAL) {
-            Ok(result) => result,
-            Err(err) => {
-                println!("Error: {err}");
-                process::exit(1);
-            }
-        };
+    let config_file_path: PathBuf = [default_config_path, PathBuf::from(config_file_name)]
+        .iter()
+        .collect();
+
+    let totps: Vec<Totp> = match config::load_totps(&config_file_path, DIGITS, INTERVAL) {
+        Ok(result) => result,
+        Err(err) => {
+            println!("Error: {err}");
+            process::exit(1);
+        }
+    };
 
     let mut stdout = stdout();
 

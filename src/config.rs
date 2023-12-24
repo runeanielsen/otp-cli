@@ -187,4 +187,46 @@ Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&iss
             assert!(false)
         }
     }
+
+    // In case the user has formatted the file with a lot of empty newlines.
+    #[test]
+    fn can_parse_totp_configuration_content_empty_lines() {
+        let digits = 6;
+        let interval = 30;
+
+        let totp_lines = "
+Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp
+Otpauth://totp/Widget Co:me@my-domain.com?secret=MFRGGZD&issuer=WidgetCo
+
+Otpauth://totp/Foobar Inc.:me@my-domain.com?secret=MZXW6YTBOI======&issuer=FoobarInc
+
+Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&issuer=GlobexCorp
+";
+
+        let expected = [
+            Totp::new("Acme Inc.", "GZMWV5JLOMNI2XJL", digits, interval),
+            Totp::new("Widget Co", "MFRGGZD", digits, interval),
+            Totp::new("Foobar Inc.", "MZXW6YTBOI======", digits, interval),
+            Totp::new("Globex Corp.", "JBSWY3DPFQQFO33SNRSCC===", digits, interval),
+        ];
+
+        let result = parse_totp_config(totp_lines, digits, interval);
+
+        if let Ok(result_totps) = result {
+            // Length is asserted to make sure that the result retunred actually,
+            // contains elements, if this is not checked we can get into a situation
+            // where some elements are not asserted against eachother if the amount of
+            // elements differ in each vector.
+            assert!(result_totps.len() == expected.len());
+
+            for (idx, totp) in result_totps.iter().enumerate() {
+                let expected_totp = &expected[idx];
+                assert!(expected_totp.name == totp.name);
+                assert!(expected_totp.digits == totp.digits);
+                assert!(expected_totp.interval == totp.interval);
+            }
+        } else {
+            assert!(false)
+        }
+    }
 }

@@ -60,10 +60,17 @@ fn parse_totp_config(
 ) -> Result<Vec<Totp>, Box<dyn Error>> {
     totp_lines
         .split('\n')
+        // Not interested in empty lines.
         .filter(|x| !x.is_empty())
+        // Not interested in comment lines.
+        .filter(|x| !is_comment(x))
         .map(str::trim)
         .map(|x| parse_uri_string_format(x, digits, interval).map_err(Into::into))
         .collect()
+}
+
+fn is_comment(text: &str) -> bool {
+    text.starts_with("//")
 }
 
 fn parse_uri_string_format(
@@ -155,9 +162,11 @@ mod tests {
         let digits = 6;
         let interval = 30;
 
-        let totp_lines =
-            "Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp
+        let totp_lines = "// Big companies
+Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp
 Otpauth://totp/Widget Co:me@my-domain.com?secret=MFRGGZD&issuer=WidgetCo
+
+// Small companies
 Otpauth://totp/Foobar Inc.:me@my-domain.com?secret=MZXW6YTBOI======&issuer=FoobarInc
 Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&issuer=GlobexCorp";
 
@@ -227,6 +236,74 @@ Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&iss
             }
         } else {
             assert!(false)
+        }
+    }
+
+    #[test]
+    fn can_parse_totp_configuration_content_with_comments() {
+        let digits = 6;
+        let interval = 30;
+
+        let totp_lines = "
+// This is a comment
+Otpauth://totp/Acme Inc.:me@my-domain.com?secret=GZMWV5JLOMNI2XJL&issuer=AcmeCorp
+Otpauth://totp/Widget Co:me@my-domain.com?secret=MFRGGZD&issuer=WidgetCo
+// This is a comment
+Otpauth://totp/Foobar Inc.:me@my-domain.com?secret=MZXW6YTBOI======&issuer=FoobarInc
+// This is a comment
+Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&issuer=GlobexCorp
+// This is a comment
+";
+
+        let expected = [
+            Totp::new("Acme Inc.", "GZMWV5JLOMNI2XJL", digits, interval),
+            Totp::new("Widget Co", "MFRGGZD", digits, interval),
+            Totp::new("Foobar Inc.", "MZXW6YTBOI======", digits, interval),
+            Totp::new("Globex Corp.", "JBSWY3DPFQQFO33SNRSCC===", digits, interval),
+        ];
+
+        let result = parse_totp_config(totp_lines, digits, interval);
+
+        if let Ok(result_totps) = result {
+            // Length is asserted to make sure that the result retunred actually,
+            // contains elements, if this is not checked we can get into a situation
+            // where some elements are not asserted against eachother if the amount of
+            // elements differ in each vector.
+            assert!(result_totps.len() == expected.len());
+
+            for (idx, totp) in result_totps.iter().enumerate() {
+                let expected_totp = &expected[idx];
+                assert!(expected_totp.name == totp.name);
+                assert!(expected_totp.digits == totp.digits);
+                assert!(expected_totp.interval == totp.interval);
+            }
+        } else {
+            assert!(false)
+        }
+    }
+
+    // It might be useful for users to be able to seperate their totp config file with comments.
+    // Comments starts with '#' symbol, if the line starts with that it is a comment line.
+    #[test]
+    fn can_check_if_line_is_comment() {
+        let assertions = [
+            // Comments.
+            ("// This is my comment", true),
+            ("//This is my comment", true),
+            ("///", true),
+            ("//", true),
+            ("////###!#//##$%^&//", true),
+            // Not comments.
+            ("/#/This is NOT a comment", false),
+            ("This is NOT a comment", false),
+            ("T//his is NOT a comment", false),
+            ("This is NOT a comment//", false),
+            ("Otpauth://totp/Globex Corp.:me@my-domain.com?secret=JBSWY3DPFQQFO33SNRSCC===&issuer=GlobexCorp", false),
+            ("Otpauth://totp/Widget Co:me@my-domain.com?secret=MFRGGZD&issuer=WidgetCo", false),
+        ];
+
+        for (value, expected) in assertions {
+            assert!(is_comment(value) == expected);
         }
     }
 }

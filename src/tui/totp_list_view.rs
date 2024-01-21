@@ -155,7 +155,9 @@ impl HandleEvent for TotpListView {
                 TotpCommandType::Search => {
                     if event == &Event::Key(KeyCode::Backspace.into()) {
                         command.input.pop();
-                    } else if event == &Event::Key(KeyCode::Enter.into()) {
+                    } else if event == &Event::Key(KeyCode::Enter.into())
+                        || event == &Event::Key(KeyCode::Esc.into())
+                    {
                         self.command = None;
                     } else if let Event::Key(KeyEvent {
                         code: KeyCode::Char(char),
